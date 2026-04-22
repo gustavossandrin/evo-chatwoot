@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+
+evolution.env
+evolution.env.*
+!evolution.env.example

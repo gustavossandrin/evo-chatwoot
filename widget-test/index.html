@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meu site · Chat embutido</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0c0f14;
+      --surface: #151b24;
+      --border: #2a3544;
+      --text: #e6edf3;
+      --muted: #8b9eb0;
+      --accent: #3b82f6;
+      --radius: 10px;
+      --font: system-ui, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #eef1f6;
+        --surface: #fff;
+        --border: #d0d8e2;
+        --text: #1a2332;
+        --muted: #5a6b7d;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .site-top {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .site-top h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .site-top button {
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .site-top button:hover { background: var(--border); }
+    .explain {
+      flex-shrink: 0;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.45;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .explain strong { color: var(--text); }
+    .panel {
+      display: none;
+      flex-shrink: 0;
+      padding: 1rem 1.25rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .panel.open { display: block; }
+    .panel label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    .panel input {
+      width: 100%;
+      max-width: 420px;
+      padding: 0.5rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .panel .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+    .panel button.primary {
+      font: inherit;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    .panel button.primary:hover { filter: brightness(1.08); }
+    .embed-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    .embed-inner {
+      flex: 1;
+      min-height: 420px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 12px 40px #00000022;
+    }
+    .embed-inner iframe {
+      width: 100%;
+      height: 100%;
+      min-height: min(72vh, 720px);
+      border: none;
+      display: block;
+    }
+    .placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: min(72vh, 720px);
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: center;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-top">
+    <h1>Loja / site (demo)</h1>
+    <button type="button" id="btnToggle">Configurar chat</button>
+  </header>
+  <p class="explain">
+    Abaixo fica o <strong>chat do visitante</strong> (cliente no seu site), igual ao widget Chatwoot em área fixa.
+    Quem <strong>atende</strong> continua no painel Chatwoot em <code>/app</code> — esse painel de agente não pode ser embutido em iframe em outro domínio por segurança.
+    No canal Website, em domínios permitidos, inclua a URL desta página (ex.: <code>http://localhost:3333</code>).
+  </p>
+  <div class="panel" id="panel">
+    <label for="baseUrl">URL base do Chatwoot</label>
+    <input id="baseUrl" type="url" placeholder="http://localhost:3000" autocomplete="off" />
+    <label for="token">Website token (canal Website)</label>
+    <input id="token" type="text" placeholder="Token do canal Website" autocomplete="off" />
+    <div class="actions">
+      <button type="button" class="primary" id="btnApply">Aplicar e carregar iframe</button>
+      <button type="button" id="btnSave">Salvar no navegador</button>
+    </div>
+  </div>
+  <div class="embed-wrap">
+    <div class="embed-inner" id="embedHost">
+      <div class="placeholder" id="ph">Configure o token acima e clique em aplicar, ou abra a configuração.</div>
+      <iframe id="cwFrame" title="Chat Chatwoot" style="display:none" src="about:blank"></iframe>
+    </div>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const LS_BASE = "cw_test_base";
+    const LS_TOKEN = "cw_test_token";
+    function normBase(u) {
+      return String(u || "").trim().replace(/\/+$/, "");
+    }
+    function loadLs() {
+      $("baseUrl").value = localStorage.getItem(LS_BASE) || "http://localhost:3000";
+      $("token").value = localStorage.getItem(LS_TOKEN) || "";
+    }
+    function showIframe(show) {
+      $("ph").style.display = show ? "none" : "flex";
+      $("cwFrame").style.display = show ? "block" : "none";
+    }
+    function applyEmbed() {
+      const baseUrl = normBase($("baseUrl").value);
+      const token = $("token").value.trim();
+      const f = $("cwFrame");
+      if (!baseUrl || !token) {
+        showIframe(false);
+        return;
+      }
+      f.src = baseUrl + "/widget?website_token=" + encodeURIComponent(token);
+      showIframe(true);
+    }
+    $("btnToggle").addEventListener("click", function () {
+      $("panel").classList.toggle("open");
+    });
+    $("btnApply").addEventListener("click", function () {
+      applyEmbed();
+      $("panel").classList.remove("open");
+    });
+    $("btnSave").addEventListener("click", function () {
+      localStorage.setItem(LS_BASE, normBase($("baseUrl").value));
+      localStorage.setItem(LS_TOKEN, $("token").value.trim());
+    });
+    loadLs();
+    if (localStorage.getItem(LS_TOKEN)) {
+      applyEmbed();
+    }
+  </script>
+</body>
+</html>
