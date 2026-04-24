@@ -4,9 +4,6 @@ services:
     pull_policy: always
     volumes:
       - chatwoot_storage:/app/storage
-    depends_on:
-      - postgres
-      - redis
     ports:
       - "${CHATWOOT_RAILS_HOST_PORT:-3003}:3000"
     env_file:
@@ -28,9 +25,6 @@ services:
     pull_policy: always
     volumes:
       - chatwoot_storage:/app/storage
-    depends_on:
-      - postgres
-      - redis
     env_file:
       - .env
     environment:
@@ -110,15 +104,6 @@ services:
     image: evoapicloud/evolution-api:latest
     pull_policy: always
     restart: unless-stopped
-    depends_on:
-      evolution-redis:
-        condition: service_started
-      evolution-postgres:
-        condition: service_started
-      postgres:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
     ports:
       - "${EVOLUTION_API_HOST_PORT:-8082}:8080"
     env_file:
