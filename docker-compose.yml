@@ -109,10 +109,8 @@ services:
     env_file:
       - evolution.env
     environment:
-      RABBITMQ_ENABLED: "true"
-      RABBITMQ_GLOBAL_ENABLED: "true"
-      RABBITMQ_URI: ${RABBITMQ_URI:-amqp://guest:guest@rabbitmq:5672}
-      WEBHOOK_GLOBAL_ENABLED: "false"
+      RABBITMQ_ENABLED: "false"
+      RABBITMQ_GLOBAL_ENABLED: "false"
     volumes:
       - evolution_instances:/evolution/instances
     networks:
@@ -145,27 +143,6 @@ services:
     command: ["redis-server", "--appendonly", "yes", "--loglevel", "warning"]
     volumes:
       - evolution_redis:/data
-    networks:
-      - internal
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    pull_policy: always
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-    ports:
-      - "${RABBITMQ_HOST_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_HOST_PORT:-15672}:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
     networks:
       - internal
 
@@ -216,4 +193,3 @@ volumes:
   evolution_instances:
   evolution_redis:
   evolution_postgres:
-  rabbitmq_data:
